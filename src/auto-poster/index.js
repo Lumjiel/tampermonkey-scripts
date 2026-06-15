@@ -5,6 +5,7 @@
 // @description  一键解放双手，自动循环发帖，支持任务队列和断点续传
 // @author       YourName
 // @match        *://*.chaoxing.com/*
+// @match        *://groupweb.chaoxing.com/*
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -15,6 +16,14 @@
 
 (function () {
     'use strict';
+
+    // ====== 上下文检测 ======
+    // 讨论区内容已迁移至 groupweb.chaoxing.com 的跨域 iframe 中
+    // 脚本需要在 iframe 内运行才能操作编辑器 DOM
+    if (window.top === window) {
+        // 主页面：讨论元素在跨域 iframe 中，无法访问
+        return;
+    }
 
     const CONFIG_KEY = 'chaoxing_config_v12';
     const TASK_POOL_KEY = 'chaoxing_task_pool_v12';
@@ -228,14 +237,23 @@
             let attempts = 0;
             const check = () => {
                 attempts++;
-                const keywords = ['新建话题', '新话题', '发表话题', '发帖'];
-                const all = document.querySelectorAll('button, a, div, span');
-                for (const el of all) {
-                    const txt = (el.textContent || '').trim();
-                    if (keywords.some(kw => txt.includes(kw))) {
-                        resolve(el);
-                        return;
+                // 优先使用专用类选择器
+                let btn = document.querySelector('.createTopic, .newTopic, [class*="newTopic"], [class*="new-topic"]');
+                // 兜底按文本匹配（限定在按钮/链接元素中，避免误匹配话题标题）
+                if (!btn) {
+                    const keywords = ['新建话题', '新话题', '发表话题', '发帖'];
+                    const all = document.querySelectorAll('button, a, span, div[onclick], div[class*="btn"]');
+                    for (const el of all) {
+                        const txt = (el.textContent || '').trim();
+                        if (txt.length < 10 && keywords.some(kw => txt.includes(kw))) {
+                            btn = el;
+                            break;
+                        }
                     }
+                }
+                if (btn) {
+                    resolve(btn);
+                    return;
                 }
                 if (attempts < 10) setTimeout(check, 500);
                 else resolve(null);
@@ -310,10 +328,11 @@
         await waitForElement('.editContainer, iframe#ueditor_0, iframe#uiditor_0', 5000);
         await wait(1000);
 
-        const titleInput = document.querySelector('.edit_title input');
+        const titleInput = document.querySelector('.edit_title input') || document.querySelector('input[name="title"]');
         if (titleInput) {
             titleInput.value = title;
             titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+            titleInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
         const fillResult = await fillEditorContent(content);
@@ -326,9 +345,11 @@
         publishBtn.click();
 
         try {
-            await waitForElement('.editContainer', 4000).then(el => {
+            // 等待编辑器容器消失（发帖成功后编辑器会关闭）
+            const editorSelector = '.editContainer, iframe#ueditor_0';
+            await waitForElement(editorSelector, 4000).then(() => {
                 const observer = new MutationObserver(() => {
-                    if (!document.querySelector('.editContainer')) {
+                    if (!document.querySelector(editorSelector)) {
                         observer.disconnect();
                     }
                 });
@@ -417,10 +438,30 @@
     };
 
     const init = () => {
-        loadConfig();
-        createUI();
-        initEventListeners();
-        checkAndResumeTask();
+        // 检测编辑器是否已加载（iframe 页面可能先显示讨论列表，编辑器延迟加载）
+        const hasEditor = document.querySelector('iframe#ueditor_0') || window.UE;
+        if (hasEditor) {
+            loadConfig();
+            createUI();
+            initEventListeners();
+            checkAndResumeTask();
+            return;
+        }
+
+        // 编辑器未就绪，监听 DOM 变化等待加载
+        const observer = new MutationObserver(() => {
+            if (document.querySelector('iframe#ueditor_0') || window.UE) {
+                observer.disconnect();
+                loadConfig();
+                createUI();
+                initEventListeners();
+                checkAndResumeTask();
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // 30 秒后如果还没找到编辑器，停止监听
+        setTimeout(() => observer.disconnect(), 30000);
     };
 
     if (document.readyState === 'loading') {
