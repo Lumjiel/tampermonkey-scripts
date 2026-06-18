@@ -285,6 +285,7 @@
                     try {
                         unsafeWindow.UE.instants[key].fireEvent('contentChange');
                     } catch (e) {
+                        // 部分 UEditor 实例可能不支持 contentChange，忽略
                     }
                 });
             }
@@ -356,6 +357,7 @@
                 observer.observe(document.body, { childList: true, subtree: true });
             });
         } catch (e) {
+            // 编辑器关闭超时不影响后续流程
         }
 
         return true;
