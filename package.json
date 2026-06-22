@@ -1,7 +1,7 @@
 {
-  "name": "chaoxing-helper",
-  "version": "1.1.0",
-  "description": "超星学习通助手集 - 代码编辑器增强和自动发帖功能",
+  "name": "tampermonkey-scripts",
+  "version": "2.0.0",
+  "description": "Tampermonkey 用户脚本合集 — 超星学习通助手 + 抖音批量管理",
   "main": "index.js",
   "scripts": {
     "lint": "eslint src/",
@@ -12,9 +12,11 @@
   },
   "keywords": [
     "tampermonkey",
+    "userscript",
     "chaoxing",
     "学习通",
-    "userscript"
+    "douyin",
+    "抖音"
   ],
   "author": "Lumjiel",
   "license": "MIT",

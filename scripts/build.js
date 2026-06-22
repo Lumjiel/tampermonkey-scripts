@@ -17,7 +17,10 @@ const version = versionArg || null;
 // 脚本列表：[源目录名, 输出文件名]
 const SCRIPTS = [
     ['code-enhancer', 'code-enhancer.user.js'],
-    ['auto-poster', 'auto-poster.user.js']
+    ['auto-poster', 'auto-poster.user.js'],
+    ['auto-navigator', 'auto-navigator.user.js'],
+    ['douyin-export', 'douyin-export.user.js'],
+    ['douyin-maintain', 'douyin-maintain.user.js']
 ];
 
 // 发布时替换的字段

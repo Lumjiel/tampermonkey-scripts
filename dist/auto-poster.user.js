@@ -78,7 +78,7 @@
 
     const clearTaskPool = () => GM_deleteValue(TASK_POOL_KEY);
 
-    const wait = (ms) => new Promise(r => setTimeout(r, ms));
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
     const createUI = () => {
         const oldUI = document.getElementById('chaoxing-post-ui');
@@ -164,17 +164,24 @@
             e.stopPropagation();
             toggleCollapse();
         });
-        document.getElementById('ui-header').addEventListener('dblclick', toggleCollapse);
+        document
+            .getElementById('ui-header')
+            .addEventListener('dblclick', toggleCollapse);
 
         document.getElementById('save-config').addEventListener('click', () => {
             config.title = document.getElementById('post-title').value;
             config.contentRaw = document.getElementById('content-list').value;
-            config.interval = parseInt(document.getElementById('post-interval').value);
-            config.autoStartOnLoad = document.getElementById('auto-start').checked;
+            config.interval = parseInt(
+                document.getElementById('post-interval').value
+            );
+            config.autoStartOnLoad =
+                document.getElementById('auto-start').checked;
             saveConfig();
         });
 
-        document.getElementById('start-btn').addEventListener('click', () => startAutoPosting(false));
+        document
+            .getElementById('start-btn')
+            .addEventListener('click', () => startAutoPosting(false));
         document.getElementById('stop-btn').addEventListener('click', () => {
             if (confirm('确定要结束并清空任务吗？')) {
                 isRunning = false;
@@ -190,7 +197,14 @@
         const text = document.getElementById('progress-text');
         if (text) {
             text.textContent = msg;
-            text.style.color = type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : type === 'warning' ? '#FF9800' : '#2196F3';
+            text.style.color =
+                type === 'success'
+                    ? '#4CAF50'
+                    : type === 'error'
+                      ? '#F44336'
+                      : type === 'warning'
+                        ? '#FF9800'
+                        : '#2196F3';
         }
     };
 
@@ -213,7 +227,8 @@
             const check = () => {
                 const el = document.querySelector(selector);
                 if (el) resolve(el);
-                else if (Date.now() - start > timeout) reject(new Error('Timeout waiting for ' + selector));
+                else if (Date.now() - start > timeout)
+                    reject(new Error('Timeout waiting for ' + selector));
                 else setTimeout(check, 200);
             };
             check();
@@ -225,7 +240,8 @@
             const start = Date.now();
             const check = () => {
                 if (cond()) resolve();
-                else if (Date.now() - start > timeout) reject(new Error('Condition timeout'));
+                else if (Date.now() - start > timeout)
+                    reject(new Error('Condition timeout'));
                 else setTimeout(check, 200);
             };
             check();
@@ -238,14 +254,21 @@
             const check = () => {
                 attempts++;
                 // 优先使用专用类选择器
-                let btn = document.querySelector('.createTopic, .newTopic, [class*="newTopic"], [class*="new-topic"]');
+                let btn = document.querySelector(
+                    '.createTopic, .newTopic, [class*="newTopic"], [class*="new-topic"]'
+                );
                 // 兜底按文本匹配（限定在按钮/链接元素中，避免误匹配话题标题）
                 if (!btn) {
                     const keywords = ['新建话题', '新话题', '发表话题', '发帖'];
-                    const all = document.querySelectorAll('button, a, span, div[onclick], div[class*="btn"]');
+                    const all = document.querySelectorAll(
+                        'button, a, span, div[onclick], div[class*="btn"]'
+                    );
                     for (const el of all) {
                         const txt = (el.textContent || '').trim();
-                        if (txt.length < 10 && keywords.some(kw => txt.includes(kw))) {
+                        if (
+                            txt.length < 10 &&
+                            keywords.some((kw) => txt.includes(kw))
+                        ) {
                             btn = el;
                             break;
                         }
@@ -264,12 +287,21 @@
 
     const fillEditorContent = async (content) => {
         try {
-            const iframe = await waitForElement('iframe#ueditor_0, iframe#uiditor_0', 4000);
+            const iframe = await waitForElement(
+                'iframe#ueditor_0, iframe#uiditor_0',
+                4000
+            );
             await wait(800);
-            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            const doc =
+                iframe.contentDocument || iframe.contentWindow?.document;
             if (!doc) return false;
 
-            await waitForCondition(() => doc.body && doc.querySelector('body[contenteditable="true"]'), 3000);
+            await waitForCondition(
+                () =>
+                    doc.body &&
+                    doc.querySelector('body[contenteditable="true"]'),
+                3000
+            );
             const body = doc.querySelector('body[contenteditable="true"]');
             if (!body) return false;
 
@@ -278,12 +310,16 @@
             p.textContent = content;
             body.appendChild(p);
 
-            ['input', 'change', 'keyup'].forEach(evt => body.dispatchEvent(new Event(evt, { bubbles: true })));
+            ['input', 'change', 'keyup'].forEach((evt) =>
+                body.dispatchEvent(new Event(evt, { bubbles: true }))
+            );
 
             if (unsafeWindow.UE && unsafeWindow.UE.instants) {
-                Object.keys(unsafeWindow.UE.instants).forEach(key => {
+                Object.keys(unsafeWindow.UE.instants).forEach((key) => {
                     try {
-                        unsafeWindow.UE.instants[key].fireEvent('contentChange');
+                        unsafeWindow.UE.instants[key].fireEvent(
+                            'contentChange'
+                        );
                     } catch (e) {
                         // 部分 UEditor 实例可能不支持 contentChange，忽略
                     }
@@ -300,11 +336,17 @@
         return new Promise((resolve) => {
             const start = Date.now();
             const check = () => {
-                let btn = document.querySelector('.jb_btn_92:not(.jb_btn_92_disable)');
+                let btn = document.querySelector(
+                    '.jb_btn_92:not(.jb_btn_92_disable)'
+                );
                 if (!btn) {
                     const btns = document.querySelectorAll('button');
                     for (const b of btns) {
-                        if ((b.textContent.includes('发布') || b.textContent.includes('发表')) && !b.disabled) {
+                        if (
+                            (b.textContent.includes('发布') ||
+                                b.textContent.includes('发表')) &&
+                            !b.disabled
+                        ) {
                             btn = b;
                             break;
                         }
@@ -326,10 +368,15 @@
         if (!newTopicBtn) throw new Error('找不到新建话题按钮');
         newTopicBtn.click();
 
-        await waitForElement('.editContainer, iframe#ueditor_0, iframe#uiditor_0', 5000);
+        await waitForElement(
+            '.editContainer, iframe#ueditor_0, iframe#uiditor_0',
+            5000
+        );
         await wait(1000);
 
-        const titleInput = document.querySelector('.edit_title input') || document.querySelector('input[name="title"]');
+        const titleInput =
+            document.querySelector('.edit_title input') ||
+            document.querySelector('input[name="title"]');
         if (titleInput) {
             titleInput.value = title;
             titleInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -354,7 +401,10 @@
                         observer.disconnect();
                     }
                 });
-                observer.observe(document.body, { childList: true, subtree: true });
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
             });
         } catch (e) {
             // 编辑器关闭超时不影响后续流程
@@ -368,7 +418,9 @@
 
         if (!isResume) {
             const rawText = document.getElementById('content-list').value;
-            const contents = rawText.split('\n').filter(line => line.trim() !== '');
+            const contents = rawText
+                .split('\n')
+                .filter((line) => line.trim() !== '');
 
             if (contents.length === 0) {
                 alert('内容列表不能为空！');
@@ -377,7 +429,9 @@
             }
 
             config.title = document.getElementById('post-title').value;
-            config.interval = parseInt(document.getElementById('post-interval').value);
+            config.interval = parseInt(
+                document.getElementById('post-interval').value
+            );
             saveConfig();
 
             setTaskPool(contents);
@@ -430,7 +484,10 @@
     const checkAndResumeTask = () => {
         const pool = getTaskPool();
         if (pool && pool.length > 0) {
-            showMessage(`🔄 检测到未完成任务 (剩余 ${pool.length} 条)`, 'warning');
+            showMessage(
+                `🔄 检测到未完成任务 (剩余 ${pool.length} 条)`,
+                'warning'
+            );
             updateProgressUI();
 
             if (config.autoStartOnLoad) {
@@ -441,7 +498,8 @@
 
     const init = () => {
         // 检测编辑器是否已加载（iframe 页面可能先显示讨论列表，编辑器延迟加载）
-        const hasEditor = document.querySelector('iframe#ueditor_0') || window.UE;
+        const hasEditor =
+            document.querySelector('iframe#ueditor_0') || window.UE;
         if (hasEditor) {
             loadConfig();
             createUI();

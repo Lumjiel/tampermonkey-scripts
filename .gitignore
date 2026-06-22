@@ -22,3 +22,12 @@ npm-debug.log*
 # Temp files
 *.tmp
 *.temp
+
+# Debug / MCP
+.playwright-mcp/
+.codex/
+.mcp.json
+AGENTS.md
+
+# 保留 dist/（用户需要直接安装 .user.js）
+!dist/
