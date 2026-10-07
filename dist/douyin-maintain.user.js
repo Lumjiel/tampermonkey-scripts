@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const API_BASE = '/aweme/v1/web';
     const PARAMS = 'device_platform=webapp&aid=6383&channel=channel_pc_web';
     const MAX_RETRY = 2;
@@ -27,15 +27,21 @@
             try {
                 const resp = await fetch(`${API_BASE}${url}?${PARAMS}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
                     body,
-                    credentials: 'include',
+                    credentials: 'include'
                 });
                 const data = await resp.json();
                 if (data.status_code === 0) return { ok: true, data };
                 // status_code 非 0，可能是限流，等一下重试
                 if (attempt < retries) await sleep(2000 * (attempt + 1));
-                return { ok: false, error: `status_code=${data.status_code}`, data };
+                return {
+                    ok: false,
+                    error: `status_code=${data.status_code}`,
+                    data
+                };
             } catch (e) {
                 if (attempt < retries) await sleep(2000 * (attempt + 1));
                 else return { ok: false, error: e.message };
@@ -44,15 +50,24 @@
     }
 
     async function apiCollect(awemeId) {
-        return apiCall('/aweme/collect/', `action=0&aweme_id=${awemeId}&aweme_type=0`);
+        return apiCall(
+            '/aweme/collect/',
+            `action=0&aweme_id=${awemeId}&aweme_type=0`
+        );
     }
 
     async function apiUncollect(awemeId) {
-        return apiCall('/aweme/collect/', `action=0&aweme_id=${awemeId}&aweme_type=0`);
+        return apiCall(
+            '/aweme/collect/',
+            `action=0&aweme_id=${awemeId}&aweme_type=0`
+        );
     }
 
     async function apiUnlike(awemeId) {
-        return apiCall('/commit/item/digg/', `aweme_id=${awemeId}&item_type=0&type=0`);
+        return apiCall(
+            '/commit/item/digg/',
+            `aweme_id=${awemeId}&item_type=0&type=0`
+        );
     }
 
     // ================================================================
@@ -68,7 +83,7 @@
             if (obj.fav || obj.like) {
                 return {
                     fav: (obj.fav || []).map(String),
-                    like: (obj.like || []).map(String),
+                    like: (obj.like || []).map(String)
                 };
             }
             // 纯数组: ["id1", "id2"]
@@ -76,10 +91,15 @@
                 const ids = obj.map(String);
                 return { fav: ids, like: [] };
             }
-        } catch { /* not JSON format */ }
+        } catch {
+            /* not JSON format */
+        }
 
         // 纯文本：每行一个 ID，全部作为收藏处理
-        const ids = text.split('\n').map(s => s.trim()).filter(Boolean);
+        const ids = text
+            .split('\n')
+            .map((s) => s.trim())
+            .filter(Boolean);
         return { fav: ids, like: [] };
     }
 
@@ -143,25 +163,42 @@
         // 恢复输入框
         const saved = localStorage.getItem('dy_maintain_input');
         if (saved) input.value = saved;
-        input.addEventListener('input', () => localStorage.setItem('dy_maintain_input', input.value));
+        input.addEventListener('input', () =>
+            localStorage.setItem('dy_maintain_input', input.value)
+        );
 
-        function log(msg) { statusEl.textContent += '\n' + msg; statusEl.scrollTop = statusEl.scrollHeight; }
-        function updateProgress(cur, total) { progressBar.style.width = (total > 0 ? cur / total * 100 : 0) + '%'; }
+        function log(msg) {
+            statusEl.textContent += '\n' + msg;
+            statusEl.scrollTop = statusEl.scrollHeight;
+        }
+        function updateProgress(cur, total) {
+            progressBar.style.width =
+                (total > 0 ? (cur / total) * 100 : 0) + '%';
+        }
 
         // ================================================================
         //  批量执行
         // ================================================================
         async function processBatch(ids, apiFn, actionName) {
             const progressKey = `dy_progress_${actionName}`;
-            const completed = new Set(JSON.parse(GM_getValue(progressKey, '[]')));
-            const pending = ids.filter(id => !completed.has(id));
+            const completed = new Set(
+                JSON.parse(GM_getValue(progressKey, '[]'))
+            );
+            const pending = ids.filter((id) => !completed.has(id));
 
-            if (completed.size > 0) log(`📋 恢复: 已完成 ${completed.size}, 剩余 ${pending.length}`);
+            if (completed.size > 0)
+                log(
+                    `📋 恢复: 已完成 ${completed.size}, 剩余 ${pending.length}`
+                );
             log(`\n🚀 ${actionName} ${pending.length} 条`);
 
-            let success = 0, fail = 0;
+            let success = 0,
+                fail = 0;
             for (let i = 0; i < pending.length; i++) {
-                if (stopped) { log('⏹ 已停止'); break; }
+                if (stopped) {
+                    log('⏹ 已停止');
+                    break;
+                }
                 const vid = pending[i];
 
                 const result = await apiFn(vid);
@@ -172,7 +209,9 @@
                     log(`✅ [${i + 1}/${pending.length}] ${vid}`);
                 } else {
                     fail++;
-                    log(`❌ [${i + 1}/${pending.length}] ${vid} — ${result.error}`);
+                    log(
+                        `❌ [${i + 1}/${pending.length}] ${vid} — ${result.error}`
+                    );
                 }
 
                 updateProgress(i + 1, pending.length);
@@ -186,9 +225,14 @@
         runBtn.addEventListener('click', async () => {
             const parsed = parseInput(input.value);
             const total = parsed.fav.length + parsed.like.length;
-            if (total === 0) { log('⚠️ 请先粘贴 ID 列表'); return; }
+            if (total === 0) {
+                log('⚠️ 请先粘贴 ID 列表');
+                return;
+            }
 
-            log(`\n📊 输入: 收藏 ${parsed.fav.length} + 喜欢 ${parsed.like.length} = ${total}`);
+            log(
+                `\n📊 输入: 收藏 ${parsed.fav.length} + 喜欢 ${parsed.like.length} = ${total}`
+            );
 
             stopped = false;
             if (parsed.fav.length > 0) {
@@ -203,7 +247,10 @@
         unfavBtn.addEventListener('click', async () => {
             const parsed = parseInput(input.value);
             const allIds = [...parsed.fav, ...parsed.like]; // 全部当收藏处理
-            if (allIds.length === 0) { log('⚠️ 请先粘贴 ID 列表'); return; }
+            if (allIds.length === 0) {
+                log('⚠️ 请先粘贴 ID 列表');
+                return;
+            }
             stopped = false;
             await processBatch(allIds, apiUncollect, 'unfav');
         });
@@ -212,12 +259,18 @@
         unlikeBtn.addEventListener('click', async () => {
             const parsed = parseInput(input.value);
             const allIds = [...parsed.fav, ...parsed.like];
-            if (allIds.length === 0) { log('⚠️ 请先粘贴 ID 列表'); return; }
+            if (allIds.length === 0) {
+                log('⚠️ 请先粘贴 ID 列表');
+                return;
+            }
             stopped = false;
             await processBatch(allIds, apiUnlike, 'unlike');
         });
 
-        stopBtn.addEventListener('click', () => { stopped = true; log('⏹ 停止'); });
+        stopBtn.addEventListener('click', () => {
+            stopped = true;
+            log('⏹ 停止');
+        });
 
         clearBtn.addEventListener('click', () => {
             GM_setValue('dy_progress_unfav', '[]');

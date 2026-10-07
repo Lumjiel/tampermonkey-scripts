@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         抖音下载器（视频/音频/BGM/封面）
 // @namespace    http://tampermonkey.net/
-// @version      1.5.0
+// @version      1.5.1
 // @description  拦截抖音网页版数据接口，捕获正在浏览的视频：下载无水印视频（多清晰度，含声音）、纯音轨（m4a）、背景音乐 BGM、封面图。面板顶部固定显示正在播放的视频，可收起成小球。
 // @author       Lumjiel
 // @match        https://www.douyin.com/*
@@ -9,6 +9,7 @@
 // @grant        unsafeWindow
 // @grant        GM_download
 // @grant        GM_xmlhttpRequest
+// @grant        GM_setClipboard
 // @connect      *
 // @require      https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js
 // ==/UserScript==
@@ -611,14 +612,14 @@
         }, 4000);
     }
 
-    function gmXhrBlob(url) {
+    function gmXhrBlob(url, timeoutMs) {
         return new Promise((resolve, reject) => {
             if (typeof GM_xmlhttpRequest !== 'function')
                 return reject(new Error('no GM_xmlhttpRequest'));
             GM_xmlhttpRequest({
                 url,
                 responseType: 'blob',
-                timeout: 120000,
+                timeout: timeoutMs || 120000,
                 onload: (r) =>
                     r.status >= 200 && r.status < 300
                         ? resolve(r.response)
@@ -642,7 +643,7 @@
             btn.__dydlLabel = btn.textContent;
             btn.disabled = true;
             btn.textContent = '下载中…';
-            setTimeout(revert, 20000); // 兜底复原，防状态卡死
+            setTimeout(revert, 60000);
         }
         toast('开始下载：' + filename);
         const done = () => {
@@ -652,52 +653,52 @@
             toast('已交给浏览器下载');
             setTimeout(revert, 2500);
         };
-        const fail = (manual) => {
+        // 最终兜底：复制直链，绝不用 window.open（无后缀下载会触发系统「选取应用」）
+        const lastResort = (why) => {
             revert();
-            if (manual) {
-                W.open(url, '_blank');
-                toast('已在新标签打开，请手动保存', true);
+            try {
+                GM_setClipboard(url);
+            } catch (e) {
+                /* 忽略 */
             }
+            toast(
+                '下载通道失败(' +
+                    why +
+                    ')，直链已复制到剪贴板，可粘贴到浏览器/IDM 下载',
+                true
+            );
         };
-        const viaFetch = () => {
-            fetch(url)
-                .then((r) =>
-                    r.ok
-                        ? r.blob()
-                        : Promise.reject(new Error('HTTP ' + r.status))
-                )
-                .then((blob) => {
-                    saveBlob(blob, filename);
-                    done();
-                })
-                .catch(() => fail(true));
-        };
-        if (typeof GM_download === 'function') {
+        // GM_download 报错时把真实原因亮出来（常见：TM「下载 BETA」扩展名白名单）
+        const viaGmDownload = (onFail) => {
+            if (typeof GM_download !== 'function')
+                return onFail('no GM_download');
             try {
                 GM_download({
                     url,
                     name: filename,
                     saveAs: false,
                     onload: done,
-                    onerror: () =>
-                        gmXhrBlob(url)
-                            .then((blob) => {
-                                saveBlob(blob, filename);
-                                done();
-                            })
-                            .catch(viaFetch)
+                    onerror: (e) => {
+                        const msg = (e && (e.error || e.message)) || '未知错误';
+                        toast('GM_download 失败：' + msg, true);
+                        onFail(msg);
+                    }
                 });
-                return;
             } catch (e) {
-                /* 忽略 */
+                onFail(e.message);
             }
-        }
-        gmXhrBlob(url)
-            .then((blob) => {
-                saveBlob(blob, filename);
-                done();
-            })
-            .catch(viaFetch);
+        };
+        const viaXhr = (timeoutMs) => () =>
+            gmXhrBlob(url, timeoutMs)
+                .then((blob) => {
+                    saveBlob(blob, filename);
+                    done();
+                })
+                .catch((e) => lastResort(e.message));
+        // 大文件（视频）优先 GM_download（流式省内存）；小文件（音频/封面）优先内存 blob（文件名可靠）
+        const isSmall = /\.(mp3|m4a|jpe?g)$/i.test(filename);
+        if (isSmall) viaXhr(180000)();
+        else viaGmDownload(viaXhr(600000)());
     }
 
     /* ---- MP3 转码下载：AAC(m4a) 解码为 PCM 后用 lamejs 编码成 mp3 ---- */

@@ -13,7 +13,7 @@
 (function () {
     'use strict';
 
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     // ================================================================
     //  Part 1: API 拦截（document-start）
@@ -24,57 +24,89 @@
     function handleApiData(url, body) {
         if (stopped) return;
         // 收藏
-        if (url.includes('listcollection') || (url.includes('favorite') && url.includes('aweme'))) {
-            for (const item of (body.aweme_list || body.data?.list || [])) {
+        if (
+            url.includes('listcollection') ||
+            (url.includes('favorite') && url.includes('aweme'))
+        ) {
+            for (const item of body.aweme_list || body.data?.list || []) {
                 const id = item.aweme_id;
-                if (!id || apiCache.favorites.some(x => x.id === id)) continue;
-                const s = item.statistics || {}, a = item.author || {};
+                if (!id || apiCache.favorites.some((x) => x.id === id))
+                    continue;
+                const s = item.statistics || {},
+                    a = item.author || {};
                 apiCache.favorites.push({
-                    id, title: item.desc || '',
+                    id,
+                    title: item.desc || '',
                     url: `https://www.douyin.com/video/${id}`,
-                    author: a.nickname || '', authorUid: a.uid || '',
-                    likes: s.digg_count || 0, comments: s.comment_count || 0,
-                    shares: s.share_count || 0, duration: item.duration || 0,
+                    author: a.nickname || '',
+                    authorUid: a.uid || '',
+                    likes: s.digg_count || 0,
+                    comments: s.comment_count || 0,
+                    shares: s.share_count || 0,
+                    duration: item.duration || 0,
                     createTime: item.create_time || 0,
-                    hashtags: (item.text_extra || []).map(t => t.hashtag_name).filter(Boolean),
+                    hashtags: (item.text_extra || [])
+                        .map((t) => t.hashtag_name)
+                        .filter(Boolean)
                 });
             }
         }
         // 喜欢
         if (url.includes('aweme/listliked')) {
-            for (const item of (body.aweme_list || [])) {
+            for (const item of body.aweme_list || []) {
                 const id = item.aweme_id;
-                if (!id || apiCache.likes.some(x => x.id === id)) continue;
-                apiCache.likes.push({ id, title: item.desc || '', url: `https://www.douyin.com/video/${id}` });
+                if (!id || apiCache.likes.some((x) => x.id === id)) continue;
+                apiCache.likes.push({
+                    id,
+                    title: item.desc || '',
+                    url: `https://www.douyin.com/video/${id}`
+                });
             }
         }
         // 关注（列表 + 单个用户信息）
         if (url.includes('following/list')) {
-            for (const item of (body.followings || [])) {
+            for (const item of body.followings || []) {
                 const uid = item.sec_uid || item.uid;
-                if (!uid || apiCache.following.some(x => x.secUid === uid)) continue;
+                if (!uid || apiCache.following.some((x) => x.secUid === uid))
+                    continue;
                 apiCache.following.push({
-                    name: item.nickname || '', secUid: uid,
+                    name: item.nickname || '',
+                    secUid: uid,
                     desc: item.signature || '',
-                    followerCount: item.follower_count || 0,
+                    followerCount: item.follower_count || 0
                 });
             }
         }
         if (url.includes('im/user/info') || url.includes('query/user')) {
             const user = body.user || body;
             const uid = user.sec_uid || user.uid;
-            if (uid && user.nickname && !apiCache.following.some(x => x.secUid === uid)) {
-                apiCache.following.push({ name: user.nickname, secUid: uid, desc: user.signature || '' });
+            if (
+                uid &&
+                user.nickname &&
+                !apiCache.following.some((x) => x.secUid === uid)
+            ) {
+                apiCache.following.push({
+                    name: user.nickname,
+                    secUid: uid,
+                    desc: user.signature || ''
+                });
             }
         }
     }
 
     const _xhrOpen = XMLHttpRequest.prototype.open;
     const _xhrSend = XMLHttpRequest.prototype.send;
-    XMLHttpRequest.prototype.open = function (m, url, ...a) { this._dyUrl = url; return _xhrOpen.call(this, m, url, ...a); };
+    XMLHttpRequest.prototype.open = function (m, url, ...a) {
+        this._dyUrl = url;
+        return _xhrOpen.call(this, m, url, ...a);
+    };
     XMLHttpRequest.prototype.send = function (...a) {
         this.addEventListener('load', function () {
-            try { handleApiData(this._dyUrl || '', JSON.parse(this.responseText)); } catch (e) { /* not JSON */ }
+            try {
+                handleApiData(this._dyUrl || '', JSON.parse(this.responseText));
+            } catch (e) {
+                /* not JSON */
+            }
         });
         return _xhrSend.call(this, ...a);
     };
@@ -84,10 +116,16 @@
         const resp = await _fetch.call(this, ...a);
         try {
             const url = typeof a[0] === 'string' ? a[0] : a[0]?.url || '';
-            if (url.includes('aweme') || url.includes('user/info') || url.includes('following')) {
+            if (
+                url.includes('aweme') ||
+                url.includes('user/info') ||
+                url.includes('following')
+            ) {
                 handleApiData(url, await resp.clone().json());
             }
-        } catch (e) { /* not API response */ }
+        } catch (e) {
+            /* not API response */
+        }
         return resp;
     };
 
@@ -131,21 +169,31 @@
         const stopBtn = panel.querySelector('#dy-btn-stop');
         const exportBtn = panel.querySelector('#dy-btn-export');
 
-        function log(msg) { statusEl.textContent += '\n' + msg; statusEl.scrollTop = statusEl.scrollHeight; }
-        function hint(msg) { log(`👉 ${msg}`); }
+        function log(msg) {
+            statusEl.textContent += '\n' + msg;
+            statusEl.scrollTop = statusEl.scrollHeight;
+        }
+        function hint(msg) {
+            log(`👉 ${msg}`);
+        }
 
         // DOM 抓取
         function scrapeVideos() {
-            const seen = new Set(), results = [];
-            for (const a of document.querySelectorAll('a[href*="/video/"], a[href*="/note/"]')) {
+            const seen = new Set(),
+                results = [];
+            for (const a of document.querySelectorAll(
+                'a[href*="/video/"], a[href*="/note/"]'
+            )) {
                 const m = a.href.match(/(video|note)\/(\d+)/);
                 if (!m || seen.has(m[2])) continue;
                 seen.add(m[2]);
                 const img = a.querySelector('img');
                 results.push({
-                    id: m[2], type: m[1],
-                    title: (img?.alt || img?.title || a.textContent?.trim() || ''),
-                    url: `https://www.douyin.com/${m[1]}/${m[2]}`,
+                    id: m[2],
+                    type: m[1],
+                    title:
+                        img?.alt || img?.title || a.textContent?.trim() || '',
+                    url: `https://www.douyin.com/${m[1]}/${m[2]}`
                 });
             }
             return results;
@@ -153,15 +201,21 @@
 
         // 滚动（带停止检测）
         async function autoScroll(label, maxRound = 100) {
-            let lastCount = 0, stale = 0;
+            let lastCount = 0,
+                stale = 0;
             for (let i = 0; i < maxRound; i++) {
                 if (stopped) break;
                 window.scrollTo(0, document.body.scrollHeight);
                 await sleep(1500);
-                const dom = document.querySelectorAll('a[href*="/video/"], a[href*="/note/"]').length;
+                const dom = document.querySelectorAll(
+                    'a[href*="/video/"], a[href*="/note/"]'
+                ).length;
                 const api = apiCache.favorites.length + apiCache.likes.length;
                 log(`  ${label} ${i + 1}  DOM=${dom}  API=${api}`);
-                if (dom === lastCount) { stale++; if (stale >= 5) break; } else stale = 0;
+                if (dom === lastCount) {
+                    stale++;
+                    if (stale >= 5) break;
+                } else stale = 0;
                 lastCount = dom;
             }
         }
@@ -182,20 +236,26 @@
                 log('📋 读取个人主页...');
                 const t = document.body.innerText;
                 collectedData.profile = {
-                    name: document.querySelector('h1')?.textContent?.trim() || '',
+                    name:
+                        document.querySelector('h1')?.textContent?.trim() || '',
                     douyinId: (t.match(/抖音号[：:]\s*(\d+)/) || [])[1] || '',
                     followCount: (t.match(/关注\s*(\d[\d.]*)/) || [])[1] || '',
                     fanCount: (t.match(/粉丝\s*(\d[\d.]*)/) || [])[1] || '',
-                    likeCount: (t.match(/获赞\s*(\d[\d.]*)/) || [])[1] || '',
+                    likeCount: (t.match(/获赞\s*(\d[\d.]*)/) || [])[1] || ''
                 };
-                log(`  ✅ ${collectedData.profile.name} (关注${collectedData.profile.followCount} 粉丝${collectedData.profile.fanCount})`);
+                log(
+                    `  ✅ ${collectedData.profile.name} (关注${collectedData.profile.followCount} 粉丝${collectedData.profile.fanCount})`
+                );
 
                 // 2. 收藏夹
                 log('\n❤️ 采集收藏夹');
                 hint('请确认你在「收藏」tab，脚本会自动滚动加载');
                 await sleep(3000);
                 await autoScroll('收藏');
-                collectedData.favorites = apiCache.favorites.length > 0 ? apiCache.favorites : scrapeVideos();
+                collectedData.favorites =
+                    apiCache.favorites.length > 0
+                        ? apiCache.favorites
+                        : scrapeVideos();
                 log(`  ✅ 收藏 ${collectedData.favorites.length} 条\n`);
 
                 // 3. 关注列表
@@ -208,41 +268,73 @@
                     if (text === '关注' || text.match(/^关注\s*\d+$/)) {
                         let el = s.parentElement;
                         for (let i = 0; i < 5; i++) {
-                            if (el && el.offsetWidth > 0) { el.click(); clicked = true; break; }
+                            if (el && el.offsetWidth > 0) {
+                                el.click();
+                                clicked = true;
+                                break;
+                            }
                             el = el?.parentElement;
                         }
                         if (clicked) break;
                     }
                 }
                 if (clicked) {
-                    hint('弹窗已打开，请手动向下滚动到底，脚本也在尝试自动滚动');
+                    hint(
+                        '弹窗已打开，请手动向下滚动到底，脚本也在尝试自动滚动'
+                    );
                     await sleep(3000);
                     for (let i = 0; i < 30; i++) {
                         if (stopped) break;
-                        for (const sel of ['[class*="modal"]', '[class*="Modal"]', '[class*="popup"]',
-                            '[class*="Popup"]', '[class*="dialog"]', '[class*="list-wrapper"]']) {
+                        for (const sel of [
+                            '[class*="modal"]',
+                            '[class*="Modal"]',
+                            '[class*="popup"]',
+                            '[class*="Popup"]',
+                            '[class*="dialog"]',
+                            '[class*="list-wrapper"]'
+                        ]) {
                             for (const el of document.querySelectorAll(sel)) {
-                                if (el.scrollHeight > el.clientHeight + 10) el.scrollTop = el.scrollHeight;
+                                if (el.scrollHeight > el.clientHeight + 10)
+                                    el.scrollTop = el.scrollHeight;
                             }
                         }
                         window.scrollTo(0, document.body.scrollHeight);
                         await sleep(1500);
                         // DOM 补充
-                        for (const a of document.querySelectorAll('a[href*="/user/"]')) {
+                        for (const a of document.querySelectorAll(
+                            'a[href*="/user/"]'
+                        )) {
                             if (a.href.includes('/user/self')) continue;
-                            const uid = a.href.match(/user\/([A-Za-z0-9_-]+)/)?.[1] || '';
-                            if (!uid || apiCache.following.some(x => x.secUid === uid)) continue;
+                            const uid =
+                                a.href.match(/user\/([A-Za-z0-9_-]+)/)?.[1] ||
+                                '';
+                            if (
+                                !uid ||
+                                apiCache.following.some((x) => x.secUid === uid)
+                            )
+                                continue;
                             const name = a.textContent?.trim() || '';
                             if (name.length > 0 && name.length < 40) {
-                                apiCache.following.push({ name, secUid: uid, url: a.href });
+                                apiCache.following.push({
+                                    name,
+                                    secUid: uid,
+                                    url: a.href
+                                });
                             }
                         }
-                        log(`  弹窗 ${i + 1}  API=${apiCache.following.length}个`);
+                        log(
+                            `  弹窗 ${i + 1}  API=${apiCache.following.length}个`
+                        );
                     }
                     // 关闭弹窗
-                    const closeBtn = document.querySelector('[class*="close"], [aria-label="close"], [aria-label="Close"]');
+                    const closeBtn = document.querySelector(
+                        '[class*="close"], [aria-label="close"], [aria-label="Close"]'
+                    );
                     if (closeBtn) closeBtn.click();
-                    else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+                    else
+                        document.dispatchEvent(
+                            new KeyboardEvent('keydown', { key: 'Escape' })
+                        );
                     await sleep(1000);
                 }
                 collectedData.following = apiCache.following;
@@ -253,19 +345,32 @@
                     log('👍 采集喜欢列表');
                     hint('即将切换到「喜欢」tab，请不要操作');
                     await sleep(1000);
-                    const likeTab = Array.from(document.querySelectorAll('[role="tab"]')).find(t => t.textContent?.trim() === '喜欢');
-                    if (likeTab) { likeTab.click(); await sleep(4000); }
+                    const likeTab = Array.from(
+                        document.querySelectorAll('[role="tab"]')
+                    ).find((t) => t.textContent?.trim() === '喜欢');
+                    if (likeTab) {
+                        likeTab.click();
+                        await sleep(4000);
+                    }
                     hint('请手动向下滚动加载更多喜欢的内容');
                     await autoScroll('喜欢');
-                    collectedData.likes = apiCache.likes.length > 0 ? apiCache.likes : scrapeVideos();
+                    collectedData.likes =
+                        apiCache.likes.length > 0
+                            ? apiCache.likes
+                            : scrapeVideos();
                     log(`  ✅ 喜欢 ${collectedData.likes.length} 条\n`);
                 }
 
                 // 汇总
                 collectedData.collectedAt = new Date().toISOString();
-                const total = collectedData.favorites.length + collectedData.likes.length + collectedData.following.length;
+                const total =
+                    collectedData.favorites.length +
+                    collectedData.likes.length +
+                    collectedData.following.length;
                 log(`🎉 采集完成！共 ${total} 条`);
-                log(`   收藏 ${collectedData.favorites.length} | 喜欢 ${collectedData.likes.length} | 关注 ${collectedData.following.length}`);
+                log(
+                    `   收藏 ${collectedData.favorites.length} | 喜欢 ${collectedData.likes.length} | 关注 ${collectedData.following.length}`
+                );
                 exportBtn.disabled = false;
             } catch (e) {
                 log(`❌ 出错: ${e.message}`);
@@ -280,14 +385,20 @@
             stopped = true;
             log('\n⏹ 已停止采集');
             // 直接导出已有数据
-            if (collectedData.favorites?.length || collectedData.following?.length || collectedData.likes?.length) {
+            if (
+                collectedData.favorites?.length ||
+                collectedData.following?.length ||
+                collectedData.likes?.length
+            ) {
                 exportBtn.disabled = false;
             }
         });
 
         // 导出
         exportBtn.addEventListener('click', () => {
-            const blob = new Blob([JSON.stringify(collectedData, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(collectedData, null, 2)], {
+                type: 'application/json'
+            });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
