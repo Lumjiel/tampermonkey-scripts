@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         抖音下载器（视频/音频/BGM/封面）
 // @namespace    http://tampermonkey.net/
-// @version      1.5.1
+// @version      1.5.2
 // @description  拦截抖音网页版数据接口，捕获正在浏览的视频：下载无水印视频（多清晰度，含声音）、纯音轨（m4a）、背景音乐 BGM、封面图。面板顶部固定显示正在播放的视频，可收起成小球。
 // @author       Lumjiel
 // @match        https://www.douyin.com/*
@@ -1279,7 +1279,17 @@
         head.id = 'dydl-head';
         const title = document.createElement('div');
         title.className = 'dydl-title';
-        title.textContent = '抖音下载器';
+        let ver = '';
+        try {
+            ver =
+                ' v' +
+                (typeof GM_info !== 'undefined' && GM_info.script
+                    ? GM_info.script.version
+                    : '');
+        } catch (e) {
+            /* 忽略 */
+        }
+        title.textContent = '抖音下载器' + ver;
         const cnt = document.createElement('small');
         title.appendChild(cnt);
         const btnMin = mkIconBtn('—', () => {
