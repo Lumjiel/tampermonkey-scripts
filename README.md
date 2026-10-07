@@ -137,6 +137,15 @@ npm run format     # Prettier 格式化
 
 ---
 
+## ❓ 常见问题
+
+- **下载时弹「获取打开此 'bytedance' 链接的应用」** — 这是抖音网页拉起 `bytedance://` 桌面客户端协议导致的（没装抖音客户端就会弹），与脚本下载通道无关。根治：注册一个空壳协议处理程序（`HKCUSoftwareClassesytedanceshellopencommand` 指向一个只含 `WScript.Quit` 的 vbs），或安装抖音桌面客户端
+- **GM_download 报错 / 点击没反应** — Tampermonkey 设置 → 下载 BETA，确认扩展名白名单包含 `mp4 m4a mp3 jpeg`；新版脚本会把真实报错用 toast 显示出来
+- **面板没抓到当前视频** — 脚本需在页面加载前注入（刷新页面即可）；数据缺失时占位卡有「打开详情页获取下载」自愈按钮；排查用控制台 `__DYDL_DEBUG`
+- **下载的音频想给 AI 转录** — 「音频」按钮自动转码 128kbps MP3，Whisper / 阿里云 ASR 直接可用
+
+---
+
 ## ⚠️ 免责声明
 
 - 本项目仅供学习和交流使用
