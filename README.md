@@ -1,6 +1,6 @@
 # tampermonkey-scripts — 大学生浏览器脚本合集
 
-**解决学习通代码粘贴、自动发帖、抖音数据采集的浏览器脚本。**
+**解决学习通代码粘贴、自动发帖、抖音数据采集与视频下载的浏览器脚本。**
 
 *Userscripts for students: Chaoxing unlock + Douyin export. Tampermonkey required.*
 
@@ -17,6 +17,7 @@
 | 学习通 | auto-navigator | 自动翻阅章节，累计学习次数 |
 | 抖音 | douyin-export | 采集收藏/喜欢/关注，导出 JSON |
 | 抖音 | douyin-maintain | 批量取消收藏/取消喜欢 |
+| 抖音 | douyin-downloader | 无水印视频 / MP3 音频 / BGM / 封面下载 |
 
 ---
 
@@ -81,6 +82,19 @@ npm install && npm run build
 - 🔄 失败自动重试 2 次
 - 📊 实时进度条
 
+### 6. 抖音视频下载器（43KB）
+
+刷到想要的视频，面板直接下：无水印视频（多清晰度）、MP3 音频、BGM、封面。
+
+- 🎯 面板只显示「当前视频 + 最近播放」，刷到的其他视频不堆积
+- 📋 粘贴 App 分享链接（脏文本直接粘），自动解析精确定位
+- 🎬 无水印视频多清晰度可选（含体积/码率/编码标注）
+- 🎵 音频自动转码 128kbps MP3（适合 AI 转录），按钮显示转码进度
+- 📡 四层捕获（fetch / XHR / Response / JSON.parse）+ 拉流指纹反查当前播放
+- 🤖 面板可收起成小球、可拖动，位置记忆
+
+首次下载需允许 Tampermonkey 跨域权限（`@connect *`）。个别视频数据未捕获时，占位卡提供「打开详情页获取下载」一键自愈。排查：控制台 `__DYDL_DEBUG`。
+
 ---
 
 ## 🔗 抖音完整工作流
@@ -88,6 +102,9 @@ npm install && npm run build
 ```
 douyin-export → LLM 分析 → douyin-maintain
   采集收藏/喜欢    生成清理列表    批量取消
+
+douyin-downloader → MP3 音频 → AI 转录
+  粘贴链接/边看边抓   128kbps    Whisper 等
 ```
 
 1. `douyin-export.user.js` 采集收藏/喜欢/关注 → 导出 JSON
@@ -104,6 +121,7 @@ auto-poster        @match 讨论页，面板配置间隔/内容
 auto-navigator     @match 学习页，面板配置间隔
 douyin-export      @match douyin.com/user/*
 douyin-maintain    @match douyin.com/*
+douyin-downloader  @match douyin.com/*，@require lamejs（jsdelivr）
 ```
 
 ---

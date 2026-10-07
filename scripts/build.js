@@ -20,7 +20,8 @@ const SCRIPTS = [
     ['auto-poster', 'auto-poster.user.js'],
     ['auto-navigator', 'auto-navigator.user.js'],
     ['douyin-export', 'douyin-export.user.js'],
-    ['douyin-maintain', 'douyin-maintain.user.js']
+    ['douyin-maintain', 'douyin-maintain.user.js'],
+    ['douyin-downloader', 'douyin-downloader.user.js']
 ];
 
 // 发布时替换的字段
