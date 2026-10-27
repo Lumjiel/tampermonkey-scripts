@@ -21,7 +21,8 @@ const SCRIPTS = [
     ['auto-navigator', 'auto-navigator.user.js'],
     ['douyin-export', 'douyin-export.user.js'],
     ['douyin-maintain', 'douyin-maintain.user.js'],
-    ['douyin-downloader', 'douyin-downloader.user.js']
+    ['douyin-downloader', 'douyin-downloader.user.js'],
+    ['x-list-following-picker', 'x-list-following-picker.user.js']
 ];
 
 // 发布时替换的字段

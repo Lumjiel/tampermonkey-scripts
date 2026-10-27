@@ -1,7 +1,7 @@
 {
   "name": "tampermonkey-scripts",
-  "version": "2.0.0",
-  "description": "Tampermonkey 用户脚本合集 — 超星学习通助手 + 抖音批量管理/数据采集/视频下载",
+  "version": "2.1.0",
+  "description": "Tampermonkey 用户脚本合集 — 超星学习通助手 + 抖音批量管理/数据采集/视频下载 + X 列表成员批量添加",
   "main": "index.js",
   "scripts": {
     "lint": "eslint src/",
@@ -18,7 +18,11 @@
     "douyin",
     "抖音",
     "下载器",
-    "mp3"
+    "mp3",
+    "x",
+    "twitter",
+    "列表",
+    "list"
   ],
   "author": "Lumjiel",
   "license": "MIT",

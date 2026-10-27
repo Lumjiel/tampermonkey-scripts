@@ -1,8 +1,8 @@
 # tampermonkey-scripts — 大学生浏览器脚本合集
 
-**解决学习通代码粘贴、自动发帖、抖音数据采集与视频下载的浏览器脚本。**
+**解决学习通代码粘贴、自动发帖、抖音数据采集与视频下载、X 关注列表批量添加的浏览器脚本。**
 
-*Userscripts for students: Chaoxing unlock + Douyin export. Tampermonkey required.*
+*Userscripts for students: Chaoxing unlock + Douyin export + X list member picker. Tampermonkey required.*
 
 [脚本列表](#-脚本列表) · [安装](#-安装) · [抖音工作流](#-抖音完整工作流)
 
@@ -18,6 +18,7 @@
 | 抖音 | douyin-export | 采集收藏/喜欢/关注，导出 JSON |
 | 抖音 | douyin-maintain | 批量取消收藏/取消喜欢 |
 | 抖音 | douyin-downloader | 无水印视频 / MP3 音频 / BGM / 封面下载 |
+| X (Twitter) | x-list-following-picker | 关注列表一键加进列表成员，不用逐个搜索 |
 
 ---
 
@@ -94,6 +95,18 @@ npm install && npm run build
 - 🤖 面板可收起成小球、可拖动，位置记忆
 
 首次下载需允许 Tampermonkey 跨域权限（`@connect *`）。个别视频数据未捕获时，占位卡提供「打开详情页获取下载」一键自愈。排查：控制台 `__DYDL_DEBUG`。
+
+### 7. X 列表成员增强（17KB）
+
+批量把「我关注的人」加进某个列表——X 自带的列表管理只能一个个搜索加人，关注几百个基本没法用。
+
+- 🧩 在列表成员管理页注入面板，直接展示你关注的全部人
+- 👆 点一下加入列表，支持连续添加（默认间隔 250ms 防限流）
+- ✅ 以「列表成员数实际 +1」判定成功，服务端没生效会明确报错，不假成功
+- 🏷️ 已在列表的人自动标记，避免重复点
+- 🛡️ 抓取上限 1000 个关注、250 个现有成员，防止大账号把页面拖死
+
+装上后打开任意「列表 → 编辑成员」页面即可看到面板。
 
 ---
 
